@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0F0F0D" />
+<meta name="description" content="KleeVault — kumpulan file gratis yang bisa kamu unduh." />
+<title>KleeVault</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F0F0D;
+    --bg-card:#171715;
+    --bg-raised:#1E1E1B;
+    --text:#F2F1EC;
+    --text-muted:#A1A198;
+    --border:#2A2A26;
+    --border-hover:#4C7F77;
+    --accent:#6FA39B;
+    --accent-bright:#A3F7E9;
+    --accent-text:#0B1411;
+    --radius:14px;
+    --dock-h:56px;
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box;}
+  button, a{-webkit-tap-highlight-color:transparent; touch-action:manipulation;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px); -webkit-text-size-adjust:100%;}
+  /* Scrollbar bawaan browser disembunyikan; halaman tetap bisa di-scroll (roda mouse, sentuh, keyboard).
+     Yang tampil adalah scrollbar buatan di bawah (.sb). */
+  html{scrollbar-width:none; -ms-overflow-style:none;}
+  html::-webkit-scrollbar, body::-webkit-scrollbar{display:none; width:0; height:0;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+    line-height:1.5;
+    min-height:100vh; min-height:100dvh;
+    display:flex; flex-direction:column;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  #matrixCanvas{position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; display:block;}
+  /* Vinyet: bikin hujan karakter lebih redup di tengah supaya konten tetap terbaca */
+  .vignette{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:radial-gradient(ellipse at 50% 35%, rgba(15,15,13,.78) 0%, rgba(15,15,13,.35) 55%, rgba(15,15,13,0) 100%);
+  }
+
+  .wrap{
+    flex:1; width:100%; max-width:1040px; margin:0 auto;
+    padding:64px 20px 40px; position:relative; z-index:1;
+  }
+
+  /* ---------- Header ---------- */
+  header{text-align:center; margin-bottom:40px;}
+  h1{
+    font-family:'Space Grotesk',sans-serif; font-weight:700;
+    font-size:clamp(2.6rem,8vw,4.2rem); letter-spacing:-0.03em; line-height:1;
+    margin:0 auto; width:fit-content;
+  }
+  .hero-title{transition:opacity .35s ease;}
+  .hero-desc{transition:opacity .35s ease;}
+  .hero-title.is-docked, .hero-desc.is-docked{
+    opacity:0; visibility:hidden; transition:opacity .25s ease, visibility 0s .25s;
+  }
+  .klee-accent{
+    color:var(--accent-bright);
+    text-shadow:0 0 28px rgba(163,247,233,.45);
+  }
+  header p{color:var(--text-muted); margin:14px auto 0; font-size:1.02rem; max-width:44ch;}
+
+  /* ---------- Search ---------- */
+  .search-bar{
+    position:sticky; top:calc(env(safe-area-inset-top,0px) + var(--dock-h) + 20px); z-index:5;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    padding:12px 0; margin-bottom:12px;
+  }
+  .search-box{position:relative; width:100%; max-width:480px;}
+  .search-box svg{
+    position:absolute; left:14px; top:50%; transform:translateY(-50%);
+    width:18px; height:18px; color:var(--text-muted); pointer-events:none;
+  }
+  #search{
+    width:100%; padding:13px 44px 13px 42px; border-radius:12px;
+    border:1px solid var(--border); background:rgba(23,23,21,.88);
+    -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+    color:var(--text); font:inherit; font-size:.97rem;
+    transition:border-color .15s ease, box-shadow .15s ease;
+    -webkit-appearance:none; appearance:none;
+  }
+  #search::placeholder{color:#7E7E76;}
+  #search::-webkit-search-cancel-button{display:none;}
+  #search:hover{border-color:#3A3A35;}
+  #search:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(111,163,155,.25);}
+  .kbd{
+    position:absolute; right:12px; top:50%; transform:translateY(-50%);
+    font-size:.72rem; color:var(--text-muted); border:1px solid var(--border);
+    border-radius:6px; padding:1px 7px; background:var(--bg-raised); pointer-events:none;
+  }
+  #clear{
+    position:absolute; right:8px; top:50%; transform:translateY(-50%);
+    width:30px; height:30px; border:0; border-radius:8px; cursor:pointer;
+    background:transparent; color:var(--text-muted); display:none;
+    align-items:center; justify-content:center;
+  }
+  #clear svg{position:static; transform:none; width:16px; height:16px;}
+  #clear:hover{background:var(--bg-raised); color:var(--text);}
+  #clear:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
+  .search-box.has-value #clear{display:flex;}
+  .search-box.has-value .kbd{display:none;}
+  .count{font-size:.82rem; color:var(--text-muted); min-height:1.2em; text-align:center; margin:0 0 16px;}
+
+  /* ---------- Scrollbar buatan ---------- */
+  .sb{
+    position:fixed; z-index:40; right:3px; width:14px;
+    top:calc(env(safe-area-inset-top,0px) + 8px);
+    bottom:calc(env(safe-area-inset-bottom,0px) + 8px);
+    border-radius:999px; opacity:0; transition:opacity .35s ease, background-color .2s ease;
+    touch-action:none;
+  }
+  .sb.no-scroll{display:none;}
+  .sb.is-active, .sb.is-drag{opacity:1;}
+  .sb-thumb{
+    position:absolute; top:0; right:2px; width:6px; min-height:40px; border-radius:999px;
+    background:rgba(111,163,155,.6);
+    box-shadow:0 0 0 1px rgba(15,15,13,.35);
+    will-change:transform; touch-action:none; cursor:grab;
+    transition:width .18s ease, background-color .18s ease;
+  }
+  /* Area sentuh diperlebar supaya mudah diraih jari */
+  .sb-thumb::before{content:""; position:absolute; top:0; bottom:0; left:-12px; right:-6px;}
+  .sb.is-drag .sb-thumb{cursor:grabbing;}
+  .sb.is-drag .sb-thumb, .sb-thumb:active{background:var(--accent-bright);}
+  html.sb-dragging, html.sb-dragging *{user-select:none; -webkit-user-select:none; cursor:grabbing !important;}
+  /* Perangkat dengan mouse: tipis terlihat saat diam, membesar saat disorot */
+  @media (pointer:fine){
+    .sb{opacity:.45;}
+    .sb:hover, .sb.is-active, .sb.is-drag{opacity:1;}
+    .sb:hover, .sb.is-drag{background:rgba(255,255,255,.05);}
+    .sb:hover .sb-thumb, .sb.is-drag .sb-thumb{width:10px; background:rgba(163,247,233,.75);}
+  }
+  /* Perangkat sentuh: hanya tampil sebentar saat di-scroll dan tidak menghalangi sentuhan */
+  @media (pointer:coarse){
+    .sb{pointer-events:none;}
+    .sb.is-active .sb-thumb, .sb.is-drag .sb-thumb{pointer-events:auto; width:8px;}
+  }
+
+  /* ---------- Panel dock (muncul saat halaman di-scroll) ---------- */
+  .dock{
+    position:fixed; z-index:20;
+    top:calc(env(safe-area-inset-top,0px) + 10px);
+    left:12px; right:12px; margin:0 auto; max-width:1040px; height:var(--dock-h);
+    display:flex; align-items:center; gap:14px; padding:0 14px 0 24px;
+    visibility:hidden; pointer-events:none;
+    transition:visibility 0s .45s;
+  }
+  .dock.is-on{visibility:visible; pointer-events:auto; transition:visibility 0s 0s;}
+  /* Latar panel dipisah dari isinya supaya logo bisa "terbang" keluar dari kotak panel */
+  .dock-bg{
+    position:absolute; inset:0; border-radius:999px; overflow:hidden;
+    background:rgba(23,23,21,.78); border:1px solid rgba(163,247,233,.16);
+    -webkit-backdrop-filter:blur(16px) saturate(1.2); backdrop-filter:blur(16px) saturate(1.2);
+    box-shadow:0 12px 32px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.05);
+    opacity:0; transform:translateY(-18px) scale(.55,.7); transform-origin:50% 0;
+    transition:transform .35s ease, opacity .3s ease;
+  }
+  .dock.is-on .dock-bg{
+    opacity:1; transform:none;
+    transition:transform .65s cubic-bezier(.2,.9,.25,1.12), opacity .3s ease;
+  }
+  .dock-bg::after{
+    content:""; position:absolute; top:0; bottom:0; left:0; width:40%;
+    background:linear-gradient(100deg, transparent, rgba(163,247,233,.16), transparent);
+    transform:translateX(-130%);
+  }
+  .dock.is-on .dock-bg::after{animation:dock-sheen 1.2s ease .4s both;}
+  @keyframes dock-sheen{to{transform:translateX(330%);}}
+
+  .dock-logo{
+    position:relative; flex:0 0 auto; display:inline-block;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.3rem;
+    letter-spacing:-0.03em; line-height:1; color:var(--text); text-decoration:none;
+    transform-origin:0 0; will-change:transform;
+    opacity:0; transition:opacity .2s ease;
+  }
+  .dock.is-on .dock-logo{opacity:1;}
+  .dock-logo:focus-visible, .dock-up:focus-visible{outline:2px solid var(--accent-bright); outline-offset:4px; border-radius:6px;}
+  .dock-desc{
+    position:relative; flex:1 1 auto; min-width:0;
+    font-size:.86rem; line-height:1.3; color:var(--text-muted);
+    padding-left:14px; border-left:1px solid var(--border);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    opacity:0; transform:translateX(-14px); clip-path:inset(0 100% 0 0);
+    transition:opacity .2s ease, transform .2s ease, clip-path .2s ease;
+  }
+  .dock.is-on .dock-desc{
+    opacity:1; transform:none; clip-path:inset(0 0 0 0);
+    transition:opacity .45s ease .3s, transform .6s cubic-bezier(.2,.8,.2,1) .3s, clip-path .6s cubic-bezier(.2,.8,.2,1) .3s;
+  }
+  .dock-up{
+    position:relative; flex:0 0 auto; width:36px; height:36px; margin-left:auto;
+    display:inline-flex; align-items:center; justify-content:center; padding:0;
+    border:1px solid var(--border); border-radius:999px; cursor:pointer;
+    background:var(--bg-raised); color:var(--text);
+    opacity:0; transition:opacity .2s ease, background-color .15s ease;
+  }
+  .dock.is-on .dock-up{opacity:1; transition:opacity .4s ease .5s, background-color .15s ease;}
+  .dock-up svg{width:17px; height:17px;}
+  @media (hover:hover){ .dock-up:hover{background:var(--accent); color:var(--accent-text); border-color:var(--accent);} }
+  /* Dipakai saat halaman dimuat sudah dalam posisi ter-scroll: langsung tampil tanpa animasi */
+  .dock.no-anim, .dock.no-anim *{transition:none !important; animation:none !important;}
+  .dock.no-anim .dock-bg::after{display:none;}
+
+  /* ---------- Tab kategori ---------- */
+  .tabs{
+    position:relative; display:flex; gap:4px; padding:4px; max-width:100%;
+    background:rgba(23,23,21,.88); border:1px solid var(--border); border-radius:12px;
+    -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+    overflow-x:auto; scrollbar-width:none;
+  }
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{
+    position:relative; z-index:1; flex:0 0 auto; display:inline-flex; align-items:center; gap:8px;
+    border:0; background:transparent; color:var(--text-muted); cursor:pointer;
+    font:inherit; font-size:.9rem; font-weight:600; white-space:nowrap;
+    padding:9px 16px; border-radius:9px;
+    -webkit-tap-highlight-color:transparent;
+    transition:background-color .2s ease, color .55s cubic-bezier(.65,0,.35,1);
+  }
+  @media (hover:hover){ .tab:not([aria-selected="true"]):hover{color:var(--text); background:var(--bg-raised);} }
+  .tab[aria-selected="true"]{color:var(--accent-text);}
+  /* Pil penanda yang meluncur ke tab aktif */
+  .tab-indicator{
+    position:absolute; left:0; top:4px; bottom:4px; width:0; z-index:0;
+    border-radius:9px; background:var(--accent); pointer-events:none;
+    box-shadow:0 2px 12px rgba(111,163,155,.28);
+    /* Easing in-out: mulai pelan, mempercepat di tengah, lalu mengerem halus di tujuan */
+    --ease-io:cubic-bezier(.65,0,.35,1);
+    transition:transform .55s var(--ease-io), width .55s var(--ease-io);
+    will-change:transform,width;
+  }
+  .tab-indicator.no-anim{transition:none;}
+  .tab:focus-visible{outline:2px solid var(--accent-bright); outline-offset:1px;}
+  .tab-n{
+    font-size:.74rem; font-weight:600; min-width:1.5em; text-align:center;
+    padding:1px 6px; border-radius:999px; background:rgba(255,255,255,.08);
+    transition:background-color .3s ease;
+  }
+  .tab[aria-selected="true"] .tab-n{background:rgba(11,20,17,.18);}
+  .badge{
+    position:absolute; left:10px; top:10px; z-index:1;
+    font-size:.72rem; font-weight:600; color:var(--accent-bright);
+    background:rgba(15,15,13,.82); border:1px solid rgba(163,247,233,.25);
+    -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+    padding:3px 9px; border-radius:999px;
+  }
+
+  /* ---------- Grid & kartu ---------- */
+  /* Flex + justify-content:center: kartu yang jumlahnya sedikit atau baris terakhir yang
+     tidak penuh tetap rata di tengah, tidak menumpuk di kiri */
+  .grid{
+    display:flex; flex-wrap:wrap; justify-content:center; align-items:stretch; gap:16px;
+  }
+  .card{
+    background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
+    overflow:hidden; display:flex; flex-direction:column;
+    flex:0 0 auto; width:320px; max-width:100%;
+    transition:border-color .2s ease, background-color .2s ease;
+  }
+  @media (hover:hover){ .card:hover{border-color:var(--border-hover); background:#1A1A18;} }
+  .card-media{
+    position:relative; aspect-ratio:16/9; overflow:hidden; background:var(--bg-raised);
+  }
+  .card-img{
+    width:100%; height:100%; object-fit:cover; display:block;
+    transition:transform .4s ease;
+  }
+  @media (hover:hover){ .card:hover .card-img{transform:scale(1.04);} }
+  .card-fallback{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:2.4rem; color:#3A3A35;
+  }
+  .card-body{padding:16px 18px 18px; display:flex; flex-direction:column; gap:6px; flex:1;}
+  .card-name{
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:1.08rem;
+    letter-spacing:-0.01em; line-height:1.25; overflow-wrap:anywhere;
+  }
+  .card-desc{
+    color:var(--text-muted); font-size:.88rem; line-height:1.5; flex:1;
+    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .card-meta{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin-top:4px; font-size:.78rem; color:#8A8A82; min-width:0;
+  }
+  .card-size{
+    display:inline-flex; align-items:center; gap:6px; flex:0 0 auto;
+    color:var(--text); font-weight:500;
+    background:var(--bg-raised); border:1px solid var(--border);
+    border-radius:999px; padding:3px 10px;
+  }
+  .card-size svg{width:13px; height:13px; color:var(--accent);}
+  .card-host{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; margin-left:auto;}
+  .btn{
+    margin-top:10px; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    background:var(--accent); color:var(--accent-text); text-decoration:none;
+    padding:11px 14px; border-radius:10px; font-weight:600; font-size:.9rem;
+    transition:background-color .15s ease, transform .1s ease;
+  }
+  .btn svg{width:17px; height:17px;}
+  @media (hover:hover){ .btn:hover{background:var(--accent-bright);} }
+  .btn:active{transform:scale(.98);}
+  .btn:focus-visible{outline:2px solid var(--text); outline-offset:2px;}
+
+  /* ---------- Keadaan kosong ---------- */
+  .empty{
+    text-align:center; color:var(--text-muted); margin:56px auto 0; max-width:36ch;
+  }
+  .empty strong{display:block; color:var(--text); font-family:'Space Grotesk',sans-serif; font-size:1.2rem; margin-bottom:6px;}
+  .empty button{
+    margin-top:16px; background:var(--bg-raised); color:var(--text); border:1px solid var(--border);
+    border-radius:10px; padding:9px 16px; font:inherit; font-size:.9rem; cursor:pointer;
+  }
+  .empty button:hover{border-color:var(--border-hover);}
+  .empty button:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  /* ---------- Footer ---------- */
+  footer{
+    position:relative; z-index:1; text-align:center; color:var(--text-muted); font-size:.82rem;
+    padding:22px 16px; border-top:1px solid var(--border);
+    background:rgba(15,15,13,.9);
+  }
+
+  /* Satu momen masuk saat halaman dibuka */
+  @media (prefers-reduced-motion: no-preference){
+    header > *{animation:klee-in .6s ease backwards;}
+    header > p{animation-delay:.12s;}
+    .search-bar{animation:klee-fade .6s ease .25s backwards;}
+  }
+  @keyframes klee-in{from{opacity:0; transform:translateY(12px);}}
+  @keyframes klee-fade{from{opacity:0;}}
+
+  @media (prefers-reduced-motion: reduce){
+    .tab-indicator, .tab, .tab-n{transition:none;}
+    .dock-bg, .dock.is-on .dock-bg{transform:none; transition:opacity .2s ease;}
+    .dock-bg::after{display:none;}
+    .dock-desc, .dock.is-on .dock-desc{transform:none; clip-path:none; transition:opacity .2s ease;}
+  }
+
+  /* Perangkat sentuh tidak punya tombol "/" */
+  @media (hover:none){ .kbd{display:none;} }
+
+  /* Layar HP landscape: bar pencarian tidak menempel supaya tidak memakan layar */
+  @media (max-height:480px) and (orientation:landscape){
+    .search-bar{position:static;}
+  }
+
+  /* ---------- Mobile ---------- */
+  @media (max-width:520px){
+    :root{--dock-h:58px;}
+    .dock{left:10px; right:10px; gap:10px; padding:0 18px;}
+    .dock-logo{font-size:1.15rem;}
+    .dock-desc{
+      font-size:.72rem; line-height:1.25; padding-left:10px;
+      white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    }
+    .dock-up{display:none;}
+    .search-bar{top:calc(env(safe-area-inset-top,0px) + var(--dock-h) + 14px);}
+    .wrap{
+      padding:36px max(16px, env(safe-area-inset-right)) 28px max(16px, env(safe-area-inset-left));
+    }
+    header{margin-bottom:22px;}
+    header p{font-size:.95rem;}
+
+    /* Bar menempel dibuat lebih ramping dan punya latar, supaya kartu tidak tembus di belakang tab */
+    .search-bar{
+      gap:6px; padding:8px 16px 10px; margin:0 -16px 6px;
+      background:linear-gradient(to bottom, var(--bg) 80%, rgba(15,15,13,0));
+    }
+    .search-box{max-width:none;}
+    /* 16px mencegah iOS memperbesar layar otomatis saat kolom pencarian disentuh */
+    #search{font-size:16px; padding:13px 46px 13px 42px;}
+    #clear{width:40px; height:40px; right:3px;}
+
+    .tabs{width:100%;}
+    .tab{flex:1 0 auto; justify-content:center; padding:11px 10px; font-size:.84rem; gap:6px;}
+    .tab-n{font-size:.7rem; padding:1px 5px;}
+
+    .grid{gap:12px;}
+    .card{width:100%;}
+    .card-body{padding:14px 16px 16px;}
+    .card-name{font-size:1.05rem;}
+    .btn{min-height:46px; font-size:.95rem;}
+    .empty{margin-top:36px;}
+    footer{font-size:.78rem; padding:18px 16px;}
+  }
+</style>
+</head>
+<body>
+     <canvas id="matrixCanvas" aria-hidden="true"></canvas>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <!-- Panel yang muncul saat halaman di-scroll: logo di kiri, deskripsi di sebelah kanannya -->
+  <div class="dock" id="dock" aria-hidden="true">
+    <div class="dock-bg"></div>
+    <a class="dock-logo" id="dockLogo" href="#" aria-label="KleeVault, kembali ke atas"><span class="klee-accent">Klee</span>Vault</a>
+    <span class="dock-desc">Kumpulan file yang bisa kamu unduh secara gratis.</span>
+    <button class="dock-up" id="dockUp" type="button" aria-label="Kembali ke atas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5m0 0-6 6m6-6 6 6"/></svg>
+    </button>
+  </div>
+
+  <!-- Scrollbar buatan (dekoratif; scroll asli tetap berjalan lewat browser) -->
+  <div class="sb no-scroll" id="sb" aria-hidden="true"><div class="sb-thumb" id="sbThumb"></div></div>
+
+  <main class="wrap">
+    <header>
+      <h1 id="heroTitle" class="hero-title"><span class="klee-accent">Klee</span>Vault</h1>
+      <p id="heroDesc" class="hero-desc">Kumpulan file yang bisa kamu unduh secara gratis.</p>
+    </header>
+
+    <div class="search-bar">
+      <div class="search-box" id="searchBox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="search" type="search" placeholder="Cari nama atau deskripsi file" aria-label="Cari file" autocomplete="off" spellcheck="false" />
+        <span class="kbd" aria-hidden="true">/</span>
+        <button id="clear" type="button" aria-label="Hapus pencarian">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="tabs" id="tabs" role="tablist" aria-label="Kategori file"></div>
+    </div>
+    <div class="count" id="count" aria-live="polite"></div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="empty" id="empty" hidden>
+      <strong id="emptyTitle"></strong>
+      <span id="emptyText"></span>
+      <div><button type="button" id="emptyReset" hidden>Tampilkan semua file</button></div>
+    </div>
+  </main>
+
+  <footer>KleeVault — dibuat dengan ♥ oleh gamer untuk gamer</footer>
+
+<script>
+  /* ====== HUJAN KARAKTER (latar) ====== */
+  (function(){
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const canvas = document.getElementById('matrixCanvas');
+    const ctx = canvas.getContext('2d');
+    const isCoarse = window.matchMedia('(pointer:coarse)').matches;
+    const fontSize = 16;
+    const tail = 8;
+    const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789'.split('');
+    const rnd = () => chars[Math.floor(Math.random()*chars.length)];
+    let cols, positions, speeds, glyphs, w, h;
+
+    function resize(){
+      const dpr = Math.min(window.devicePixelRatio || 1, isCoarse ? 1.5 : 2);
+      w = window.innerWidth; h = window.innerHeight;
+      canvas.width = w * dpr; canvas.height = h * dpr;
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      // Bar alamat di HP naik-turun dan memicu resize; jangan acak ulang kalau jumlah kolom sama
+      const newCols = Math.ceil(w / fontSize);
+      if(!positions || newCols !== cols){
+        cols = newCols;
+        positions = Array.from({length:cols}, () => Math.random()*h);
+        speeds = Array.from({length:cols}, () => 18 + Math.random()*55);
+        // Karakter disimpan per kolom supaya tidak berkedip acak tiap frame
+        glyphs = Array.from({length:cols}, () => Array.from({length:tail}, rnd));
+      }
+      if(reduceMotion) draw(0);
+    }
+
+    const prevRow = [];
+    function draw(dt){
+      ctx.clearRect(0,0,w,h);
+      ctx.font = fontSize + 'px monospace';
+      ctx.textBaseline = 'top';
+      for(let c=0;c<cols;c++){
+        positions[c] += speeds[c]*dt;
+        if(positions[c] - tail*fontSize > h && Math.random() > 0.985){
+          positions[c] = -fontSize*Math.random()*10;
+          speeds[c] = 18 + Math.random()*55;
+        }
+        const headY = positions[c];
+        const row = Math.floor(headY / fontSize);
+        if(prevRow[c] !== row){ glyphs[c].unshift(rnd()); glyphs[c].length = tail; prevRow[c] = row; }
+        for(let t=0;t<tail;t++){
+          const y = headY - t*fontSize;
+          if(y < -fontSize || y > h) continue;
+          const alpha = t === 0 ? 0.55 : Math.max(0, 0.3 - t*0.04);
+          if(alpha <= 0) continue;
+          ctx.fillStyle = 'rgba(163,247,233,' + alpha.toFixed(2) + ')';
+          ctx.fillText(glyphs[c][t], c*fontSize, y);
+        }
+      }
+    }
+
+    resize();
+    let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(resize, 150); });
+    if(reduceMotion) return;
+
+    let last = null, running = true;
+    function frame(time){
+      if(!running) return;
+      if(last === null) last = time;
+      // Di HP dibatasi ±30 fps supaya baterai dan performa tetap aman
+      if(isCoarse && time - last < 33){ requestAnimationFrame(frame); return; }
+      const dt = Math.min(time - last, 50) / 1000;
+      last = time;
+      draw(dt);
+      requestAnimationFrame(frame);
+    }
+    // Hemat baterai: berhenti saat tab tidak terlihat
+    document.addEventListener('visibilitychange', () => {
+      running = !document.hidden;
+      if(running){ last = null; requestAnimationFrame(frame); }
+    });
+    requestAnimationFrame(frame);
+  })();
+
+  /* ====== DATABASE ITEM ======
+     Semua file di KleeVault diambil dari array DATA di bawah ini.
+     Tambah item baru dengan menyalin satu blok { ... } lalu isi datanya,
+     simpan, dan deploy ulang ke Vercel. Item paling atas tampil paling dulu.
+
+     Kolom wajib:
+       name      Nama item
+       desc      Deskripsi item
+       link      Link tujuan tombol Download (harus diawali http:// atau https://)
+       size      Ukuran file, tulis bebas dengan satuannya, contoh "85 MB" atau "1.2 GB"
+
+     Kolom opsional:
+       category  "Aplikasi Mod" atau "Game Port". Kalau kosong, item hanya muncul di tab Semua.
+       image     URL gambar sampul. Kalau kosong, kartu tampil tanpa gambar.
+
+     Contoh:
+       {
+         name: "Nama Item",
+         desc: "Deskripsi singkat tentang item ini.",
+         link: "https://safelinku.com/xxxxx",
+         size: "85 MB",
+         category: "Game Port",
+         image: "https://url-gambar.jpg"
+       },
+  */
+  const DATA = [
+    {
+        name: "Nama Item",
+         desc: "Deskripsi singkat tentang item ini.",
+         link: "https://safelinku.com/xxxxx",
+         size: "85 MB",
+         category: "Game Port",
+         image: "https://i.pinimg.com/474x/db/23/8d/db238d90129dd8233696a607f7f3a030.jpg"
+    }
+  ];
+
+
+  /* ====== TAMPILAN ====== */
+  const $ = id => document.getElementById(id);
+  const CATEGORIES = [
+    { key:"all",          label:"Semua" },
+    { key:"aplikasi_mod", label:"Aplikasi Mod" },
+    { key:"game_android",    label:"Game Android / Mod" },
+    { key:"game_ps2",    label:"Game PS2" }
+  ];
+  let activeCat = "all";
+  const catOf = d => (d.category || "").trim().toLowerCase();
+  const grid = $("grid"), empty = $("empty"), searchEl = $("search"), box = $("searchBox");
+  const ICON_FILE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>';
+  const ICON_DL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4 20h16"/></svg>';
+
+  // Hanya izinkan link http(s) supaya aman dari "javascript:" dan sejenisnya
+  function safeUrl(u){
+    try{
+      const x = new URL(u, location.href);
+      return (x.protocol === "http:" || x.protocol === "https:") ? x.href : "";
+    }catch(e){ return ""; }
+  }
+  function safeImg(u){
+    if(typeof u === "string" && /^data:image\/(png|jpe?g|gif|webp|svg\+xml)[;,]/i.test(u)) return u;
+    return safeUrl(u);
+  }
+  function hostOf(u){ try{ return new URL(u).hostname.replace(/^www\./,""); }catch(e){ return ""; } }
+
+  function makeCard(d){
+    const link = safeUrl(d.link);
+    const card = document.createElement("article");
+    card.className = "card";
+
+    if(d.image && safeImg(d.image)){
+      const media = document.createElement("div");
+      media.className = "card-media";
+      const fb = document.createElement("div");
+      fb.className = "card-fallback"; fb.textContent = ""; fb.setAttribute("aria-hidden","true");
+      const img = document.createElement("img");
+      img.className = "card-img"; img.loading = "lazy"; img.decoding = "async";
+      img.alt = ""; img.src = safeImg(d.image);
+      img.addEventListener("error", () => img.remove());
+      media.append(fb, img);
+      const cat = CATEGORIES.find(c => c.key !== "all" && c.key === catOf(d));
+      if(cat && activeCat === "all"){
+        const b = document.createElement("span");
+        b.className = "badge"; b.textContent = cat.label;
+        media.appendChild(b);
+      }
+      card.appendChild(media);
+    }
+
+    const body = document.createElement("div");
+    body.className = "card-body";
+    const name = document.createElement("h2");
+    name.className = "card-name"; name.textContent = d.name || "Tanpa nama";
+    name.style.margin = "0";
+    body.appendChild(name);
+
+    if(d.desc){
+      const desc = document.createElement("p");
+      desc.className = "card-desc"; desc.textContent = d.desc; desc.style.margin = "0";
+      desc.title = d.desc;
+      body.appendChild(desc);
+    } else {
+      const sp = document.createElement("div"); sp.style.flex = "1"; body.appendChild(sp);
+    }
+
+    // Baris info: ukuran file di kiri, asal link di kanan
+    const meta = document.createElement("div");
+    meta.className = "card-meta";
+    if(d.size){
+      const sz = document.createElement("span");
+      sz.className = "card-size";
+      sz.innerHTML = ICON_FILE + "<span></span>";
+      sz.lastElementChild.textContent = String(d.size);
+      sz.title = "Ukuran file";
+      meta.appendChild(sz);
+    }
+    if(link){
+      const host = document.createElement("span");
+      host.className = "card-host"; host.textContent = hostOf(link);
+      meta.appendChild(host);
+    }
+    if(meta.children.length) body.appendChild(meta);
+
+    if(link){
+      const a = document.createElement("a");
+      a.className = "btn"; a.href = link; a.target = "_blank"; a.rel = "noopener noreferrer";
+      a.innerHTML = ICON_DL + "<span>Download</span>";
+      a.setAttribute("aria-label", "Download " + (d.name || "file"));
+      body.appendChild(a);
+    }
+    card.appendChild(body);
+    return card;
+  }
+
+  const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const tabsEl = $("tabs");
+  let indicator;
+
+  // Tab dibuat sekali saja, lalu hanya diperbarui, supaya transisinya bisa mengalir
+  function buildTabs(){
+    indicator = document.createElement("span");
+    indicator.className = "tab-indicator no-anim";
+    indicator.setAttribute("aria-hidden","true");
+    tabsEl.appendChild(indicator);
+    CATEGORIES.forEach(c => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "tab"; b.dataset.cat = c.key;
+      b.setAttribute("role","tab");
+      b.innerHTML = '<span class="tab-label"></span><span class="tab-n"></span>';
+      b.querySelector(".tab-label").textContent = c.label;
+      tabsEl.appendChild(b);
+    });
+  }
+
+  function moveIndicator(animate){
+    const t = tabsEl.querySelector('.tab[aria-selected="true"]');
+    if(!t || !t.offsetWidth) return;
+    // animate: true = dengan transisi, false = langsung, null = biarkan mode yang sedang berjalan
+    // (penting: render() dipanggil di tengah transisi dan tidak boleh memotongnya)
+    if(animate !== null) indicator.classList.toggle("no-anim", !animate || REDUCED.matches);
+    indicator.style.width = t.offsetWidth + "px";
+    indicator.style.transform = "translateX(" + t.offsetLeft + "px)";
+    // Di layar sempit, geser tab aktif ke tengah
+    if(animate !== null && tabsEl.scrollWidth > tabsEl.clientWidth){
+      tabsEl.scrollTo({ left: t.offsetLeft - (tabsEl.clientWidth - t.offsetWidth)/2, behavior: animate && !REDUCED.matches ? "smooth" : "auto" });
+    }
+  }
+
+  function updateTabs(matchesQuery, animate){
+    tabsEl.querySelectorAll(".tab").forEach(b => {
+      const key = b.dataset.cat;
+      const n = key === "all" ? matchesQuery.length : matchesQuery.filter(d => catOf(d) === key).length;
+      b.querySelector(".tab-n").textContent = n;
+      b.setAttribute("aria-selected", String(key === activeCat));
+      b.tabIndex = key === activeCat ? 0 : -1;
+    });
+    moveIndicator(animate);
+  }
+
+  function getState(){
+    const q = searchEl.value.trim().toLowerCase();
+    const matchesQuery = q
+      ? DATA.filter(d => ((d.name||"") + " " + (d.desc||"")).toLowerCase().includes(q))
+      : DATA.slice();
+    const items = activeCat === "all" ? matchesQuery : matchesQuery.filter(d => catOf(d) === activeCat);
+    return { q, matchesQuery, items };
+  }
+
+  const EASE_OUT = "cubic-bezier(.2,.7,.2,1)";
+  let swapToken = 0;
+
+  // Pindah tab: pil meluncur, daftar lama memudar, daftar baru naik pelan
+  async function setCat(key, focus){
+    if(key === activeCat) return;
+    activeCat = key;
+    updateTabs(getState().matchesQuery, true);
+    if(focus){ const t = tabsEl.querySelector('[data-cat="' + key + '"]'); if(t) t.focus({preventScroll:true}); }
+
+    const token = ++swapToken;
+    if(REDUCED.matches){ render(); return; }
+
+    grid.getAnimations().forEach(a => a.cancel());
+    const out = grid.animate(
+      [{ opacity:1, transform:"none" }, { opacity:0, transform:"translateY(-6px)" }],
+      { duration:130, easing:"ease-in", fill:"forwards" }
+    );
+    try{ await out.finished; }catch(e){}
+    if(token !== swapToken) return;   // klik tab lain saat animasi berjalan
+
+    render();
+    grid.getAnimations().forEach(a => a.cancel());
+    grid.animate(
+      [{ opacity:0, transform:"translateY(10px)" }, { opacity:1, transform:"none" }],
+      { duration:380, easing:EASE_OUT }
+    );
+  }
+
+  function render(){
+    const { q, matchesQuery, items } = getState();
+    box.classList.toggle("has-value", !!searchEl.value);
+
+    updateTabs(matchesQuery, null);
+    grid.replaceChildren(...items.map(makeCard));
+
+    // Hitungan hasil
+    $("count").textContent = DATA.length
+      ? (q ? items.length + " hasil untuk \u201c" + searchEl.value.trim() + "\u201d" : items.length + " file")
+      : "";
+
+    // Keadaan kosong
+    const reset = $("emptyReset");
+    if(items.length === 0){
+      empty.hidden = false;
+      if(DATA.length === 0){
+        $("emptyTitle").textContent = "Belum ada file";
+        $("emptyText").textContent = "File baru akan muncul di sini setelah ditambahkan.";
+        reset.hidden = true;
+      } else if(q){
+        $("emptyTitle").textContent = "Tidak ada file yang cocok";
+        $("emptyText").textContent = "Coba kata kunci lain atau pindah ke kategori lain.";
+        reset.textContent = "Hapus pencarian"; reset.hidden = false;
+      } else {
+        const label = (CATEGORIES.find(c => c.key === activeCat) || {}).label || "ini";
+        $("emptyTitle").textContent = "Belum ada file di " + label;
+        $("emptyText").textContent = "Kategori ini masih kosong. Lihat file dari kategori lain dulu.";
+        reset.textContent = "Lihat semua file"; reset.hidden = false;
+      }
+    } else {
+      empty.hidden = true;
+    }
+  }
+
+  function resetSearch(){ searchEl.value = ""; render(); searchEl.focus(); }
+  function resetAll(){
+    searchEl.value = "";
+    if(activeCat === "all") render(); else setCat("all", false);
+  }
+
+  searchEl.addEventListener("input", render);
+  $("clear").addEventListener("click", resetSearch);
+  $("emptyReset").addEventListener("click", () => {
+    if(searchEl.value.trim()) resetSearch(); else resetAll();
+  });
+  $("tabs").addEventListener("click", e => {
+    const t = e.target.closest(".tab"); if(t) setCat(t.dataset.cat, false);
+  });
+  // Navigasi keyboard: panah kiri/kanan, Home, End
+  $("tabs").addEventListener("keydown", e => {
+    const keys = CATEGORIES.map(c => c.key);
+    let i = keys.indexOf(activeCat);
+    if(e.key === "ArrowRight") i = (i + 1) % keys.length;
+    else if(e.key === "ArrowLeft") i = (i - 1 + keys.length) % keys.length;
+    else if(e.key === "Home") i = 0;
+    else if(e.key === "End") i = keys.length - 1;
+    else return;
+    e.preventDefault(); setCat(keys[i], true);
+  });
+  searchEl.addEventListener("keydown", e => { if(e.key === "Escape" && searchEl.value){ e.preventDefault(); resetSearch(); } });
+  // Tekan "/" untuk langsung mencari
+  document.addEventListener("keydown", e => {
+    if(e.key === "/" && document.activeElement !== searchEl && !e.metaKey && !e.ctrlKey && !e.altKey){
+      e.preventDefault(); searchEl.focus();
+    }
+  });
+
+  buildTabs();
+  render();
+  // Posisi pil harus dihitung ulang kalau font selesai dimuat atau layar berubah ukuran
+  moveIndicator(false);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => moveIndicator(false));
+  window.addEventListener("resize", () => moveIndicator(false));
+  /* ====== PANEL DOCK ======
+     Saat judul besar sudah terscroll ke atas, panel bulat muncul dengan animasi,
+     logo "terbang" dari tengah ke kiri atas, lalu deskripsi meluncur keluar di sebelah kanannya. */
+  (function(){
+    const dock = $("dock"), logo = $("dockLogo"), title = $("heroTitle"), desc = $("heroDesc");
+    let docked = false, flight = null, ticking = false;
+
+    // Tinggi area aman (notch) dalam px
+    const probe = document.createElement("div");
+    probe.style.cssText = "position:fixed;top:0;left:0;width:0;height:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none";
+    document.body.appendChild(probe);
+
+    function toTop(e){
+      e.preventDefault();
+      window.scrollTo({ top:0, behavior: REDUCED.matches ? "auto" : "smooth" });
+    }
+    logo.addEventListener("click", toTop);
+    $("dockUp").addEventListener("click", toTop);
+
+    function setHero(on){
+      title.classList.toggle("is-docked", on);
+      desc.classList.toggle("is-docked", on);
+    }
+
+    function dockIn(instant){
+      docked = true;
+      dock.removeAttribute("aria-hidden");
+      if(flight){ flight.cancel(); flight = null; }
+
+      if(instant || REDUCED.matches){
+        dock.classList.add("no-anim", "is-on");
+        setHero(true);
+        requestAnimationFrame(() => requestAnimationFrame(() => dock.classList.remove("no-anim")));
+        return;
+      }
+
+      // FLIP: ukur posisi judul besar (awal) dan posisi logo di panel (akhir)
+      const first = title.getBoundingClientRect();
+      const last = logo.getBoundingClientRect();
+      const scale = last.width ? first.width / last.width : 1;
+      const dx = first.left - last.left;
+      const dy = Math.max(first.top, -40) - last.top;
+
+      dock.classList.add("is-on");
+      setHero(true);
+      flight = logo.animate([
+        { transform:"translate(" + dx + "px," + dy + "px) scale(" + scale + ")", opacity:0 },
+        { opacity:1, offset:.25 },
+        { transform:"none", opacity:1 }
+      ], { duration:760, easing:"cubic-bezier(.22,.9,.24,1)" });
+      flight.onfinish = () => { flight = null; };
+    }
+
+    function dockOut(){
+      docked = false;
+      if(flight){ flight.cancel(); flight = null; }
+      dock.classList.remove("is-on");
+      dock.setAttribute("aria-hidden", "true");
+      setHero(false);
+    }
+
+    function check(instant){
+      const safe = probe.offsetHeight;
+      const top = title.getBoundingClientRect().top - safe;
+      // Dua ambang berbeda (histeresis) supaya panel tidak berkedip di batas scroll
+      // Posisi judul saat halaman di paling atas (di HP lebih kecil dari di desktop)
+      const natural = top + window.scrollY;
+      const outAt = Math.min(44, natural - 8);
+      if(!docked && top < 16) dockIn(instant);
+      else if(docked && top > outAt) dockOut();
+    }
+
+    window.addEventListener("scroll", () => {
+      if(ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => { ticking = false; check(false); });
+    }, { passive:true });
+    window.addEventListener("resize", () => check(true));
+
+    check(true);   // kalau halaman dibuka sudah dalam posisi ter-scroll
+  })();
+
+  /* ====== SCROLLBAR BUATAN ======
+     Posisi dan ukuran thumb dihitung dari tinggi halaman. Thumb bisa diseret,
+     trek bisa diklik untuk loncat satu layar, dan di layar sentuh tampil sebentar saat scroll. */
+  (function(){
+    const sb = $("sb"), thumb = $("sbThumb"), root = document.documentElement;
+    let maxY = 0, maxScroll = 0, hideTimer = null, drag = null, ticking = false;
+
+    function metrics(){
+      const vh = window.innerHeight;
+      const docH = Math.max(root.scrollHeight, document.body.scrollHeight);
+      maxScroll = Math.max(0, docH - vh);
+      sb.classList.toggle("no-scroll", maxScroll <= 1);
+      if(maxScroll <= 1) return;
+      const trackH = sb.clientHeight;
+      const thumbH = Math.min(trackH, Math.max(40, Math.round(trackH * vh / docH)));
+      maxY = Math.max(0, trackH - thumbH);
+      thumb.style.height = thumbH + "px";
+    }
+    function place(){
+      const st = Math.min(Math.max(window.scrollY, 0), maxScroll);   // abaikan efek memantul di iOS
+      const y = maxScroll ? (st / maxScroll) * maxY : 0;
+      thumb.style.transform = "translateY(" + y.toFixed(1) + "px)";
+    }
+    function wake(){
+      sb.classList.add("is-active");
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => { if(!drag) sb.classList.remove("is-active"); }, 1100);
+    }
+    function refresh(){ metrics(); place(); }
+
+    window.addEventListener("scroll", () => {
+      if(!ticking){ ticking = true; requestAnimationFrame(() => { ticking = false; place(); }); }
+      wake();
+    }, { passive:true });
+    window.addEventListener("resize", refresh);
+    window.addEventListener("load", refresh);
+    // Tinggi halaman berubah saat kartu difilter, jadi ukur ulang otomatis
+    if("ResizeObserver" in window) new ResizeObserver(refresh).observe(document.body);
+    if(document.fonts && document.fonts.ready) document.fonts.ready.then(refresh);
+
+    // Seret thumb
+    thumb.addEventListener("pointerdown", e => {
+      if(e.pointerType === "mouse" && e.button !== 0) return;
+      e.preventDefault();
+      thumb.setPointerCapture(e.pointerId);
+      drag = { y:e.clientY, s:window.scrollY };
+      sb.classList.add("is-drag");
+      root.classList.add("sb-dragging");
+    });
+    thumb.addEventListener("pointermove", e => {
+      if(!drag || !maxY) return;
+      window.scrollTo(0, drag.s + (e.clientY - drag.y) * (maxScroll / maxY));
+    });
+    function endDrag(){
+      if(!drag) return;
+      drag = null;
+      sb.classList.remove("is-drag");
+      root.classList.remove("sb-dragging");
+      wake();
+    }
+    thumb.addEventListener("pointerup", endDrag);
+    thumb.addEventListener("pointercancel", endDrag);
+    thumb.addEventListener("lostpointercapture", endDrag);
+
+    // Klik di trek: loncat satu layar ke arah klik (khusus mouse)
+    sb.addEventListener("pointerdown", e => {
+      if(e.target === thumb || e.pointerType !== "mouse" || e.button !== 0) return;
+      const r = thumb.getBoundingClientRect();
+      const dir = e.clientY < r.top ? -1 : 1;
+      window.scrollBy({ top: dir * window.innerHeight * 0.85, behavior: REDUCED.matches ? "auto" : "smooth" });
+    });
+
+    refresh();
+  })();
+
+  // Satu momen masuk untuk daftar file saat halaman dibuka
+  if(!REDUCED.matches) grid.animate(
+    [{ opacity:0, transform:"translateY(12px)" }, { opacity:1, transform:"none" }],
+    { duration:600, delay:250, easing:EASE_OUT, fill:"backwards" }
+  );
+</script>
+</body>
+</html>
