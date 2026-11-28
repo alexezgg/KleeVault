@@ -162,7 +162,7 @@
 
   /* ---------- Scrollbar buatan ---------- */
   .sb{
-    position:fixed; z-index:40; right:3px; width:14px;
+    position:fixed; z-index:40; right:3px; width:10px;
     top:calc(env(safe-area-inset-top,0px) + 8px);
     bottom:calc(env(safe-area-inset-bottom,0px) + 8px);
     border-radius:999px; opacity:0; transition:opacity .35s ease, background-color .2s ease;
@@ -171,7 +171,7 @@
   .sb.no-scroll{display:none;}
   .sb.is-active, .sb.is-drag{opacity:1;}
   .sb-thumb{
-    position:absolute; top:0; right:2px; width:6px; min-height:40px; border-radius:999px;
+    position:absolute; top:0; right:2px; width:4px; min-height:32px; border-radius:999px;
     background:rgba(58, 201, 240,.6);
     box-shadow:0 0 0 1px rgba(15,15,13,.35);
     will-change:transform; touch-action:none; cursor:grab;
@@ -187,12 +187,12 @@
     .sb{opacity:.45;}
     .sb:hover, .sb.is-active, .sb.is-drag{opacity:1;}
     .sb:hover, .sb.is-drag{background:rgba(255,255,255,.05);}
-    .sb:hover .sb-thumb, .sb.is-drag .sb-thumb{width:10px; background:var(--accent-bright);}
+    .sb:hover .sb-thumb, .sb.is-drag .sb-thumb{width:6px; background:var(--accent-bright);}
   }
   /* Perangkat sentuh: hanya tampil sebentar saat di-scroll dan tidak menghalangi sentuhan */
   @media (pointer:coarse){
     .sb{pointer-events:none;}
-    .sb.is-active .sb-thumb, .sb.is-drag .sb-thumb{pointer-events:auto; width:8px;}
+    .sb.is-active .sb-thumb, .sb.is-drag .sb-thumb{pointer-events:auto; width:5px;}
   }
 
   /* ---------- Panel dock (muncul saat halaman di-scroll) ---------- */
@@ -251,7 +251,7 @@
   }
   .dock.is-on .dock-desc{
     opacity:1; transform:none; clip-path:inset(0 0 0 0);
-    transition:opacity .45s ease .3s, transform .6s cubic-bezier(.2,.8,.2,1) .3s, clip-path .6s cubic-bezier(.2,.8,.2,1) .3s;
+    transition:opacity .45s ease .5s, transform .6s cubic-bezier(.2,.8,.2,1) .5s, clip-path .6s cubic-bezier(.2,.8,.2,1) .5s;
   }
   .dock-up{
     position:relative; flex:0 0 auto; width:36px; height:36px; margin-left:auto;
@@ -411,74 +411,75 @@
     .search-bar{position:static;}
   }
 
-  /* ---------- Jendela konfirmasi download ---------- */
-  html.modal-open{overflow:hidden;}
-  .dl{
-    position:fixed; inset:0; margin:auto; padding:0;
-    width:min(480px, calc(100vw - 32px)); max-width:none; max-height:calc(100dvh - 32px);
-    overflow-x:hidden; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--accent) transparent;
-    background:var(--bg-card); color:var(--text);
-    border:1px solid var(--border); border-radius:20px;
-    box-shadow:0 30px 80px rgba(0,0,0,.6);
-    opacity:0; transform:translateY(14px) scale(.97);
-    transition:opacity .26s ease, transform .3s cubic-bezier(.2,.8,.2,1);
-  }
-  .dl.is-open{opacity:1; transform:none;}
-  .dl::backdrop{
+  /* ---------- Window konfirmasi download ----------
+     Overlay biasa (bukan <dialog>): buka/tutup hanya lewat atribut hidden, tanpa timer.
+     Animasi murni CSS dan tidak pernah menentukan status buka/tutup. */
+  .dl-overlay{
+    position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center;
+    padding:16px; overscroll-behavior:contain;
     background:rgba(4,8,10,.62);
     -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
-    opacity:0; transition:opacity .26s ease;
+    animation:dl-fade .2s ease;
   }
-  .dl.is-open::backdrop{opacity:1;}
+  .dl-overlay[hidden]{display:none;}
+  .dl-card{
+    position:relative; width:min(420px, 100%); max-height:100%;
+    overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain;
+    scrollbar-width:thin; scrollbar-color:var(--accent) transparent;
+    background:var(--bg-card); color:var(--text);
+    border:1px solid rgba(163,247,233,.16); border-radius:22px;
+    box-shadow:0 30px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(0,0,0,.35), 0 0 60px rgba(58,201,240,.06);
+    animation:dl-pop .28s cubic-bezier(.2,.8,.2,1);
+  }
+
+  .dl-x{
+    position:absolute; top:12px; right:12px; z-index:3; width:36px; height:36px; padding:0;
+    display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
+    border:1px solid rgba(255,255,255,.14); border-radius:999px; color:var(--text);
+    background:rgba(15,15,13,.6);
+    -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+    transition:background-color .15s ease, transform .1s ease;
+  }
+  .dl-x svg{width:17px; height:17px;}
+  .dl-x:active{transform:scale(.94);}
 
   .dl-media{position:relative; aspect-ratio:16/9; background:var(--bg-raised); overflow:hidden;}
+  .dl-media[hidden]{display:none;}
   .dl-media img{width:100%; height:100%; object-fit:cover; display:block;}
   .dl-media::after{
     content:""; position:absolute; inset:-1px; pointer-events:none;
-    background:linear-gradient(to top,
-      var(--bg-card) 0%,
-      rgba(23,23,21,.88) 12%,
-      rgba(23,23,21,.55) 26%,
-      rgba(23,23,21,.26) 42%,
-      rgba(23,23,21,.08) 58%,
-      rgba(23,23,21,0) 72%
-    );
+    background:linear-gradient(to top, var(--bg-card) 0%, rgba(23,23,21,.55) 28%, rgba(23,23,21,0) 68%);
   }
   .dl-cat{
-    position:absolute; left:16px; bottom:12px; z-index:1;
+    position:absolute; left:18px; bottom:12px; z-index:1;
     font-size:.74rem; font-weight:600; color:var(--accent-bright);
     background:rgba(15,15,13,.8); border:1px solid rgba(121,240,255,.28);
     -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
     padding:3px 10px; border-radius:999px;
   }
-  .dl-x{
-    position:absolute; top:12px; right:12px; z-index:3; width:38px; height:38px; padding:0;
-    display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
-    border:1px solid rgba(255,255,255,.14); border-radius:999px; color:var(--text);
-    background:rgba(15,15,13,.6);
-    -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
-  }
-  .dl-x svg{width:18px; height:18px;}
+  .dl-cat[hidden]{display:none;}
 
-  .dl-body{padding:18px 22px 22px; display:flex; flex-direction:column; gap:14px;}
-  .dl.no-media .dl-body{padding-top:24px; padding-right:62px;}
+  .dl-body{padding:6px 22px 22px; display:flex; flex-direction:column; gap:10px;}
+  .dl-card.no-media .dl-body{padding-top:24px;}
+  .dl-card.no-media .dl-title{padding-right:44px;}
   .dl-title{
     font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.3rem;
     letter-spacing:-0.01em; line-height:1.25; margin:0; overflow-wrap:anywhere;
   }
-  .dl-desc{margin:0; color:var(--text-muted); font-size:.93rem; line-height:1.55; overflow-wrap:anywhere;}
+  .dl-desc{margin:0; color:var(--text-muted); font-size:.92rem; line-height:1.55; overflow-wrap:anywhere;}
+  .dl-desc[hidden]{display:none;}
 
-  .dl-info{margin:0; border:1px solid var(--border); border-radius:12px; background:var(--bg); overflow:hidden;}
-  .dl-row{display:flex; align-items:center; gap:12px; padding:12px 14px; min-width:0;}
+  .dl-info{margin:4px 0 0; border:1px solid var(--border); border-radius:14px; background:var(--bg); overflow:hidden;}
+  .dl-row{display:flex; align-items:center; gap:12px; padding:11px 14px; min-width:0;}
   .dl-row + .dl-row{border-top:1px solid var(--border);}
   .dl-row dt{
-    display:flex; align-items:center; gap:8px; flex:0 0 auto; width:116px;
-    color:var(--text-muted); font-size:.85rem;
+    display:flex; align-items:center; gap:8px; flex:0 0 auto; width:112px;
+    color:var(--text-muted); font-size:.84rem;
   }
   .dl-row dt svg{width:16px; height:16px; color:var(--accent-bright); flex:0 0 auto;}
-  .dl-row dd{margin:0; flex:1; min-width:0; font-size:.93rem; font-weight:600;}
-  .dl-link{display:flex; align-items:center; gap:8px; min-width:0;}
-  .dl-link span{
+  .dl-row dd{margin:0; flex:1; min-width:0; font-size:.92rem; font-weight:600;}
+  .dl-linkcell{display:flex; align-items:center; gap:8px;}
+  .dl-link{
     flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.8rem;
     font-weight:500; color:var(--accent-bright);
@@ -493,26 +494,44 @@
   .dl-copy.is-done{color:var(--accent-bright); border-color:var(--accent);}
   .dl-note{margin:0; font-size:.8rem; line-height:1.45; color:#8A8A82;}
 
-  .dl-actions{display:flex; gap:10px; margin-top:2px;}
+  .dl-actions{display:flex; gap:10px; margin-top:6px;}
   .dl-btn{
-    flex:1; min-height:48px; padding:0 16px; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    flex:1; min-height:50px; padding:0 16px; display:inline-flex; align-items:center; justify-content:center; gap:8px;
     font:inherit; font-size:.95rem; font-weight:600; text-decoration:none; cursor:pointer;
-    border:1px solid transparent; border-radius:12px;
+    border:1px solid transparent; border-radius:13px;
     transition:background-color .15s ease, border-color .15s ease, transform .1s ease;
   }
   .dl-btn svg{width:18px; height:18px;}
   .dl-btn.ghost{background:var(--bg-raised); color:var(--text); border-color:var(--border);}
-  .dl-btn.primary{flex:1.6; background:var(--accent); color:var(--accent-text);}
-  .dl-btn:active{transform:scale(.98);}
+  .dl-btn.primary{flex:1.6; background:var(--accent); color:var(--accent-text); box-shadow:0 8px 22px rgba(58,201,240,.22);}
+  .dl-btn:active, .dl-copy:active{transform:scale(.98);}
   .dl-btn:focus-visible, .dl-x:focus-visible, .dl-copy:focus-visible{outline:2px solid var(--accent-bright); outline-offset:2px;}
   @media (hover:hover){
     .dl-btn.primary:hover{background:var(--accent-bright);}
     .dl-btn.ghost:hover, .dl-copy:hover{border-color:var(--border-hover);}
     .dl-x:hover{background:rgba(15,15,13,.88);}
   }
+
+  /* Di HP: naik dari bawah layar seperti sheet */
+  @media (max-width:520px){
+    .dl-overlay{align-items:flex-end; padding:0;}
+    .dl-card{
+      width:100%; max-height:92dvh; border-width:1px 0 0; border-radius:24px 24px 0 0;
+      animation:dl-sheet .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .dl-card::before{
+      content:""; position:absolute; top:8px; left:50%; width:38px; height:4px; margin-left:-19px;
+      border-radius:999px; background:rgba(255,255,255,.28); z-index:3; pointer-events:none;
+    }
+    .dl-body{padding:6px 18px calc(20px + env(safe-area-inset-bottom,0px));}
+    .dl-card.no-media .dl-body{padding-top:28px;}
+    .dl-row dt{width:100px;}
+  }
+  @keyframes dl-fade{from{opacity:0;}}
+  @keyframes dl-pop{from{opacity:0; transform:translateY(12px) scale(.97);}}
+  @keyframes dl-sheet{from{transform:translateY(100%);}}
   @media (prefers-reduced-motion: reduce){
-    .dl, .dl::backdrop{transition:opacity .15s ease;}
-    .dl{transform:none !important;}
+    .dl-overlay, .dl-card{animation:none;}
   }
 
   /* ---------- Tablet: kolom menyesuaikan lebar layar ---------- */
@@ -571,18 +590,6 @@
     .badge{left:6px; top:6px; font-size:.64rem; padding:2px 7px;}
     .btn{min-height:42px; margin-top:8px; font-size:.84rem; gap:6px; padding:9px 8px;}
 
-    /* Jendela konfirmasi di HP: naik dari bawah layar */
-    .dl{
-      inset:auto 0 0 0; margin:0; width:100%;
-      max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px));
-      border-width:1px 0 0; border-radius:22px 22px 0 0;
-      opacity:1; transform:translateY(100%);
-    }
-    .dl.is-open{transform:none;}
-    .dl-body{padding:16px 18px calc(18px + env(safe-area-inset-bottom,0px));}
-    .dl.no-media .dl-body{padding-top:22px;}
-    .dl-row dt{width:100px;}
-    .dl-title{font-size:1.2rem;}
     .btn svg{width:15px; height:15px;}
     .empty{margin-top:36px;}
     footer{font-size:.78rem; padding:18px 16px;}
@@ -638,38 +645,40 @@
 
   <footer>KleeVault — All rights reserved</footer>
 
-  <!-- Jendela konfirmasi download -->
-  <dialog class="dl" id="dl" aria-labelledby="dlTitle" aria-describedby="dlDesc">
-    <div class="dl-media" id="dlMedia" hidden>
-      <img id="dlImg" alt="">
-      <span class="dl-cat" id="dlCat" hidden></span>
-    </div>
-    <button class="dl-x" id="dlClose" type="button" aria-label="Tutup">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
-    </button>
-    <div class="dl-body">
-      <h2 class="dl-title" id="dlTitle"></h2>
-      <p class="dl-desc" id="dlDesc"></p>
-      <dl class="dl-info">
-        <div class="dl-row">
-          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>Ukuran file</dt>
-          <dd id="dlSize"></dd>
+  <!-- Window konfirmasi download -->
+  <div class="dl-overlay" id="dl" hidden>
+    <div class="dl-card" id="dlCard" role="dialog" aria-modal="true" aria-labelledby="dlTitle" aria-describedby="dlDesc">
+      <button class="dl-x" id="dlX" type="button" aria-label="Tutup">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="dl-media" id="dlMedia" hidden>
+        <img id="dlImg" alt="">
+        <span class="dl-cat" id="dlCat" hidden></span>
+      </div>
+      <div class="dl-body">
+        <h2 class="dl-title" id="dlTitle"></h2>
+        <p class="dl-desc" id="dlDesc"></p>
+        <dl class="dl-info">
+          <div class="dl-row">
+            <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>Ukuran file</dt>
+            <dd id="dlSize"></dd>
+          </div>
+          <div class="dl-row">
+            <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg>Link tujuan</dt>
+            <dd class="dl-linkcell"><span class="dl-link" id="dlLink"></span><button class="dl-copy" id="dlCopy" type="button" aria-label="Salin link"></button></dd>
+          </div>
+        </dl>
+        <p class="dl-note">Tombol Download akan membuka link tujuan di tab baru.</p>
+        <div class="dl-actions">
+          <button class="dl-btn ghost" id="dlCancel" type="button">Batal</button>
+          <a class="dl-btn primary" id="dlGo" href="#" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4 20h16"/></svg>
+            <span>Download</span>
+          </a>
         </div>
-        <div class="dl-row">
-          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg>Link tujuan</dt>
-          <dd class="dl-link"><span id="dlLink"></span><button class="dl-copy" id="dlCopy" type="button" aria-label="Salin link"></button></dd>
-        </div>
-      </dl>
-      <p class="dl-note">Tombol di bawah akan membuka link tujuan di tab baru.</p>
-      <div class="dl-actions">
-        <button class="dl-btn ghost" id="dlCancel" type="button">Batal</button>
-        <a class="dl-btn primary" id="dlGo" href="#" target="_blank" rel="noopener noreferrer">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4 20h16"/></svg>
-          <span>Lanjut Download</span>
-        </a>
       </div>
     </div>
-  </dialog>
+  </div>
 
 <script>
   /* ====== LATAR: JARINGAN PARTIKEL ======
@@ -879,23 +888,26 @@
   function hostOf(u){ try{ return new URL(u).hostname.replace(/^www\./,""); }catch(e){ return ""; } }
 
 
-  /* ====== JENDELA KONFIRMASI DOWNLOAD ======
-     Klik "Download" di kartu membuka jendela ini: gambar, deskripsi, ukuran file, dan link tujuan.
-     Link baru dibuka setelah pengunjung menekan "Lanjut Download". */
-  const dl = $("dl"), dlGo = $("dlGo"), dlCopy = $("dlCopy");
-  const ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>';
-  const ICON_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>';
-  let dlClosing = false, dlCopyTimer = null;
+  /* ====== WINDOW KONFIRMASI DOWNLOAD ======
+     Klik "Download" di kartu membuka window ini: gambar, deskripsi, ukuran file, dan link tujuan.
+     Link baru dibuka setelah menekan "Download".
+     Sengaja dibuat sederhana: buka/tutup langsung (tanpa timer atau menunggu animasi),
+     jadi tidak mungkin nyangkut dalam keadaan setengah terbuka. Satu-satunya timer hanya
+     untuk mengembalikan ikon "tersalin", dan tidak memengaruhi buka/tutup. */
+  const dlBox = $("dl"), dlCard = $("dlCard"), dlGo = $("dlGo"), dlCancel = $("dlCancel");
+  const dlX = $("dlX"), dlCopy = $("dlCopy");
+  const DL_ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>';
+  const DL_ICON_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>';
+  let dlOpener = null, dlCopyTimer = null;
 
   function resetCopy(){
     clearTimeout(dlCopyTimer);
     dlCopy.classList.remove("is-done");
-    dlCopy.innerHTML = ICON_COPY;
+    dlCopy.innerHTML = DL_ICON_COPY;
     dlCopy.setAttribute("aria-label", "Salin link");
   }
 
-  function openDl(d, link){
-    const cat = CATEGORIES.find(c => c.key !== "all" && c.key === catOf(d));
+  function openDl(d, link, opener){
     $("dlTitle").textContent = d.name || "Tanpa nama";
     const descEl = $("dlDesc");
     descEl.textContent = d.desc || ""; descEl.hidden = !d.desc;
@@ -903,40 +915,47 @@
     $("dlLink").textContent = link; $("dlLink").title = link;
     dlGo.href = link;
 
-    // Gambar (disembunyikan kalau tidak ada atau gagal dimuat)
+    // Gambar: disembunyikan kalau tidak ada atau gagal dimuat
     const media = $("dlMedia"), img = $("dlImg"), src = d.image ? safeImg(d.image) : "";
-    img.onerror = () => { media.hidden = true; dl.classList.add("no-media"); };
-    if(src){ media.hidden = false; dl.classList.remove("no-media"); img.src = src; }
-    else { media.hidden = true; img.removeAttribute("src"); dl.classList.add("no-media"); }
+    img.onerror = () => { media.hidden = true; dlCard.classList.add("no-media"); };
+    if(src){ media.hidden = false; dlCard.classList.remove("no-media"); img.src = src; }
+    else { media.hidden = true; img.removeAttribute("src"); dlCard.classList.add("no-media"); }
+
+    // Label kategori di atas gambar
+    const cat = CATEGORIES.find(c => c.key !== "all" && c.key === catOf(d));
     const catEl = $("dlCat");
     catEl.hidden = !cat; catEl.textContent = cat ? cat.label : "";
 
     resetCopy();
-    dlClosing = false;
-    if(!dl.open) dl.showModal();
-    document.documentElement.classList.add("modal-open");
-    // dua frame supaya transisi masuk berjalan dari keadaan awal
-    requestAnimationFrame(() => requestAnimationFrame(() => dl.classList.add("is-open")));
+    dlCard.scrollTop = 0;
+    dlOpener = opener || null;
+    dlBox.hidden = false;
     dlGo.focus({ preventScroll:true });
   }
 
   function closeDl(){
-    if(!dl.open || dlClosing) return;
-    dlClosing = true;
-    dl.classList.remove("is-open");
-    const finish = () => {
-      dl.close();
-      document.documentElement.classList.remove("modal-open");
-      dlClosing = false;
-    };
-    if(REDUCED.matches) finish(); else setTimeout(finish, 280);
+    if(dlBox.hidden) return;
+    dlBox.hidden = true;
+    resetCopy();
+    // kembalikan fokus ke tombol yang tadi diklik (kalau masih ada di halaman)
+    if(dlOpener && dlOpener.isConnected) dlOpener.focus({ preventScroll:true });
+    dlOpener = null;
   }
 
-  dl.addEventListener("cancel", e => { e.preventDefault(); closeDl(); });      // tombol Esc
-  dl.addEventListener("click", e => { if(e.target === dl) closeDl(); });      // klik area gelap
-  $("dlClose").addEventListener("click", closeDl);
-  $("dlCancel").addEventListener("click", closeDl);
-  dlGo.addEventListener("click", () => { setTimeout(closeDl, 150); });         // link terbuka di tab baru, jendela ditutup
+  dlBox.addEventListener("click", e => { if(e.target === dlBox) closeDl(); });   // klik area gelap
+  dlX.addEventListener("click", closeDl);
+  dlCancel.addEventListener("click", closeDl);
+  dlGo.addEventListener("click", closeDl);                                       // link tetap terbuka di tab baru
+  window.addEventListener("pageshow", closeDl);                                  // jaga-jaga saat kembali lewat tombol back
+  document.addEventListener("keydown", e => {
+    if(dlBox.hidden) return;
+    if(e.key === "Escape"){ e.preventDefault(); closeDl(); }
+    else if(e.key === "Tab"){                                                    // fokus tetap di dalam window
+      const first = dlX, last = dlGo;
+      if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    }
+  });
 
   dlCopy.addEventListener("click", async () => {
     const text = $("dlLink").textContent;
@@ -944,16 +963,17 @@
     catch(e){
       const ta = document.createElement("textarea");
       ta.value = text; ta.style.cssText = "position:fixed;opacity:0;pointer-events:none";
-      dl.appendChild(ta); ta.select();
+      dlBox.appendChild(ta); ta.select();
       try{ document.execCommand("copy"); }catch(_){}
       ta.remove();
     }
     dlCopy.classList.add("is-done");
-    dlCopy.innerHTML = ICON_OK;
+    dlCopy.innerHTML = DL_ICON_OK;
     dlCopy.setAttribute("aria-label", "Tersalin");
     clearTimeout(dlCopyTimer);
     dlCopyTimer = setTimeout(resetCopy, 1600);
   });
+  resetCopy();
 
   function makeCard(d){
     const link = safeUrl(d.link);
@@ -1019,8 +1039,8 @@
       a.setAttribute("aria-haspopup", "dialog");
       a.innerHTML = ICON_DL + "<span>Download</span>";
       a.setAttribute("aria-label", "Download " + (d.name || "file"));
-      // Klik tidak langsung membuka link, tapi menampilkan jendela konfirmasi dulu
-      a.addEventListener("click", () => openDl(d, link));
+      // Klik tidak langsung membuka link, tapi menampilkan window konfirmasi dulu
+      a.addEventListener("click", () => openDl(d, link, a));
       body.appendChild(a);
     }
     card.appendChild(body);
@@ -1173,7 +1193,7 @@
   searchEl.addEventListener("keydown", e => { if(e.key === "Escape" && searchEl.value){ e.preventDefault(); resetSearch(); } });
   // Tekan "/" untuk langsung mencari
   document.addEventListener("keydown", e => {
-    if(e.key === "/" && !dl.open && document.activeElement !== searchEl && !e.metaKey && !e.ctrlKey && !e.altKey){
+    if(e.key === "/" && dlBox.hidden && document.activeElement !== searchEl && !e.metaKey && !e.ctrlKey && !e.altKey){
       e.preventDefault(); searchEl.focus();
     }
   });
@@ -1224,33 +1244,25 @@
         return;
       }
 
-      // FLIP: ukur posisi judul besar (awal) dan posisi logo di panel (akhir)
-      const first = title.getBoundingClientRect();
-      const last = logo.getBoundingClientRect();
-      const scale = last.width ? first.width / last.width : 1;
-      const dx = first.left - last.left;
-      const dy = Math.max(first.top, -40) - last.top;
+      // Logo muncul di tengah panel, lalu meluncur ke kiri ke posisi akhirnya.
+      // Logo gambar dan tulisan digeser bersama-sama (satu kelompok) sejauh yang sama.
+      const dRect = dock.getBoundingClientRect();
+      const mRect = dockMark.getBoundingClientRect();
+      const lRect = logo.getBoundingClientRect();
+      const groupCenter = (Math.min(mRect.left, lRect.left) + Math.max(mRect.right, lRect.right)) / 2;
+      const dx = dRect.left + dRect.width / 2 - groupCenter;
+      const slide = [
+        { transform:"translateX(" + dx + "px)", opacity:0 },
+        { opacity:1, offset:.3 },
+        { transform:"none", opacity:1 }
+      ];
+      const opts = { duration:760, easing:"cubic-bezier(.22,.9,.24,1)" };
 
       dock.classList.add("is-on");
       setHero(true);
-      flight = logo.animate([
-        { transform:"translate(" + dx + "px," + dy + "px) scale(" + scale + ")", opacity:0 },
-        { opacity:1, offset:.25 },
-        { transform:"none", opacity:1 }
-      ], { duration:760, easing:"cubic-bezier(.22,.9,.24,1)" });
+      flight = logo.animate(slide, opts);
       flight.onfinish = () => { flight = null; };
-
-      // Logo gambar ikut meluncur dari tengah ke kiri atas panel
-      const mFirst = heroMark.getBoundingClientRect();
-      const mLast = dockMark.getBoundingClientRect();
-      const mScale = mLast.width ? mFirst.width / mLast.width : 1;
-      const mdx = mFirst.left - mLast.left;
-      const mdy = Math.max(mFirst.top, -40) - mLast.top;
-      flightMark = dockMark.animate([
-        { transform:"translate(" + mdx + "px," + mdy + "px) scale(" + mScale + ")", opacity:0 },
-        { opacity:1, offset:.25 },
-        { transform:"none", opacity:1 }
-      ], { duration:760, easing:"cubic-bezier(.22,.9,.24,1)" });
+      flightMark = dockMark.animate(slide, opts);
       flightMark.onfinish = () => { flightMark = null; };
     }
 
@@ -1265,13 +1277,12 @@
 
     function check(instant){
       const safe = probe.offsetHeight;
-      const top = heroMark.getBoundingClientRect().top - safe;
+      // Logo = gambar logo + tulisan KleeVault di bawahnya. Panel hanya muncul kalau
+      // keduanya sudah sepenuhnya keluar dari layar (sisi bawahnya di atas tepi atas layar).
+      const logoBottom = Math.max(heroMark.getBoundingClientRect().bottom, title.getBoundingClientRect().bottom) - safe;
       // Dua ambang berbeda (histeresis) supaya panel tidak berkedip di batas scroll
-      // Posisi judul saat halaman di paling atas (di HP lebih kecil dari di desktop)
-      const natural = top + window.scrollY;
-      const outAt = Math.min(44, natural - 8);
-      if(!docked && top < 16) dockIn(instant);
-      else if(docked && top > outAt) dockOut();
+      if(!docked && logoBottom <= 0) dockIn(instant);
+      else if(docked && logoBottom > 8) dockOut();
     }
 
     window.addEventListener("scroll", () => {
@@ -1298,7 +1309,7 @@
       sb.classList.toggle("no-scroll", maxScroll <= 1);
       if(maxScroll <= 1) return;
       const trackH = sb.clientHeight;
-      const thumbH = Math.min(trackH, Math.max(40, Math.round(trackH * vh / docH)));
+      const thumbH = Math.min(trackH, Math.max(32, Math.round(trackH * vh / docH)));
       maxY = Math.max(0, trackH - thumbH);
       thumb.style.height = thumbH + "px";
     }
