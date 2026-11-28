@@ -162,7 +162,7 @@
 
   /* ---------- Scrollbar buatan ---------- */
   .sb{
-    position:fixed; z-index:40; right:3px; width:14px;
+    position:fixed; z-index:40; right:3px; width:10px;
     top:calc(env(safe-area-inset-top,0px) + 8px);
     bottom:calc(env(safe-area-inset-bottom,0px) + 8px);
     border-radius:999px; opacity:0; transition:opacity .35s ease, background-color .2s ease;
@@ -171,7 +171,7 @@
   .sb.no-scroll{display:none;}
   .sb.is-active, .sb.is-drag{opacity:1;}
   .sb-thumb{
-    position:absolute; top:0; right:2px; width:6px; min-height:40px; border-radius:999px;
+    position:absolute; top:0; right:2px; width:4px; min-height:32px; border-radius:999px;
     background:rgba(58, 201, 240,.6);
     box-shadow:0 0 0 1px rgba(15,15,13,.35);
     will-change:transform; touch-action:none; cursor:grab;
@@ -187,12 +187,12 @@
     .sb{opacity:.45;}
     .sb:hover, .sb.is-active, .sb.is-drag{opacity:1;}
     .sb:hover, .sb.is-drag{background:rgba(255,255,255,.05);}
-    .sb:hover .sb-thumb, .sb.is-drag .sb-thumb{width:10px; background:var(--accent-bright);}
+    .sb:hover .sb-thumb, .sb.is-drag .sb-thumb{width:6px; background:var(--accent-bright);}
   }
   /* Perangkat sentuh: hanya tampil sebentar saat di-scroll dan tidak menghalangi sentuhan */
   @media (pointer:coarse){
     .sb{pointer-events:none;}
-    .sb.is-active .sb-thumb, .sb.is-drag .sb-thumb{pointer-events:auto; width:8px;}
+    .sb.is-active .sb-thumb, .sb.is-drag .sb-thumb{pointer-events:auto; width:5px;}
   }
 
   /* ---------- Panel dock (muncul saat halaman di-scroll) ---------- */
@@ -411,57 +411,125 @@
     .search-bar{position:static;}
   }
 
-  /* ---------- Window konfirmasi download (simpel) ----------
-     Overlay biasa (bukan <dialog>): buka/tutup hanya lewat atribut hidden, tanpa timer. */
+  /* ---------- Window konfirmasi download ----------
+     Overlay biasa (bukan <dialog>): buka/tutup hanya lewat atribut hidden, tanpa timer.
+     Animasi murni CSS dan tidak pernah menentukan status buka/tutup. */
   .dl-overlay{
     position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center;
-    padding:16px; background:rgba(4,8,10,.6);
-    animation:dl-fade .18s ease;
+    padding:16px; overscroll-behavior:contain;
+    background:rgba(4,8,10,.62);
+    -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+    animation:dl-fade .2s ease;
   }
   .dl-overlay[hidden]{display:none;}
   .dl-card{
-    width:min(400px, 100%); max-height:100%; overflow-x:hidden; overflow-y:auto;
+    position:relative; width:min(420px, 100%); max-height:100%;
+    overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain;
+    scrollbar-width:thin; scrollbar-color:var(--accent) transparent;
     background:var(--bg-card); color:var(--text);
-    border:1px solid var(--border); border-radius:18px;
-    box-shadow:0 24px 60px rgba(0,0,0,.55);
-    animation:dl-pop .22s cubic-bezier(.2,.8,.2,1);
+    border:1px solid rgba(163,247,233,.16); border-radius:22px;
+    box-shadow:0 30px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(0,0,0,.35), 0 0 60px rgba(58,201,240,.06);
+    animation:dl-pop .28s cubic-bezier(.2,.8,.2,1);
   }
-  .dl-media{aspect-ratio:16/9; background:var(--bg-raised); overflow:hidden;}
+
+  .dl-x{
+    position:absolute; top:12px; right:12px; z-index:3; width:36px; height:36px; padding:0;
+    display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
+    border:1px solid rgba(255,255,255,.14); border-radius:999px; color:var(--text);
+    background:rgba(15,15,13,.6);
+    -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+    transition:background-color .15s ease, transform .1s ease;
+  }
+  .dl-x svg{width:17px; height:17px;}
+  .dl-x:active{transform:scale(.94);}
+
+  .dl-media{position:relative; aspect-ratio:16/9; background:var(--bg-raised); overflow:hidden;}
   .dl-media[hidden]{display:none;}
   .dl-media img{width:100%; height:100%; object-fit:cover; display:block;}
-  .dl-body{padding:20px 22px 22px; display:flex; flex-direction:column; gap:8px;}
-  .dl-title{
-    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.15rem;
-    letter-spacing:-0.01em; line-height:1.3; margin:0; overflow-wrap:anywhere;
+  .dl-media::after{
+    content:""; position:absolute; inset:-1px; pointer-events:none;
+    background:linear-gradient(to top, var(--bg-card) 0%, rgba(23,23,21,.55) 28%, rgba(23,23,21,0) 68%);
   }
-  .dl-desc{margin:0; color:var(--text-muted); font-size:.9rem; line-height:1.5; overflow-wrap:anywhere;}
+  .dl-cat{
+    position:absolute; left:18px; bottom:12px; z-index:1;
+    font-size:.74rem; font-weight:600; color:var(--accent-bright);
+    background:rgba(15,15,13,.8); border:1px solid rgba(121,240,255,.28);
+    -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+    padding:3px 10px; border-radius:999px;
+  }
+  .dl-cat[hidden]{display:none;}
+
+  .dl-body{padding:6px 22px 22px; display:flex; flex-direction:column; gap:10px;}
+  .dl-card.no-media .dl-body{padding-top:24px;}
+  .dl-card.no-media .dl-title{padding-right:44px;}
+  .dl-title{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.3rem;
+    letter-spacing:-0.01em; line-height:1.25; margin:0; overflow-wrap:anywhere;
+  }
+  .dl-desc{margin:0; color:var(--text-muted); font-size:.92rem; line-height:1.55; overflow-wrap:anywhere;}
   .dl-desc[hidden]{display:none;}
-  .dl-info{margin:6px 0 0; display:flex; flex-direction:column; gap:6px; font-size:.85rem;}
-  .dl-row{display:flex; gap:10px; min-width:0;}
-  .dl-row dt{flex:0 0 84px; color:var(--text-muted);}
-  .dl-row dd{margin:0; flex:1; min-width:0; font-weight:600;}
+
+  .dl-info{margin:4px 0 0; border:1px solid var(--border); border-radius:14px; background:var(--bg); overflow:hidden;}
+  .dl-row{display:flex; align-items:center; gap:12px; padding:11px 14px; min-width:0;}
+  .dl-row + .dl-row{border-top:1px solid var(--border);}
+  .dl-row dt{
+    display:flex; align-items:center; gap:8px; flex:0 0 auto; width:112px;
+    color:var(--text-muted); font-size:.84rem;
+  }
+  .dl-row dt svg{width:16px; height:16px; color:var(--accent-bright); flex:0 0 auto;}
+  .dl-row dd{margin:0; flex:1; min-width:0; font-size:.92rem; font-weight:600;}
+  .dl-linkcell{display:flex; align-items:center; gap:8px;}
   .dl-link{
-    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.8rem;
     font-weight:500; color:var(--accent-bright);
   }
-  .dl-actions{display:flex; gap:10px; margin-top:14px;}
+  .dl-copy{
+    flex:0 0 auto; width:34px; height:34px; padding:0; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center;
+    border:1px solid var(--border); border-radius:9px; background:var(--bg-raised); color:var(--text);
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .dl-copy svg{width:15px; height:15px;}
+  .dl-copy.is-done{color:var(--accent-bright); border-color:var(--accent);}
+  .dl-note{margin:0; font-size:.8rem; line-height:1.45; color:#8A8A82;}
+
+  .dl-actions{display:flex; gap:10px; margin-top:6px;}
   .dl-btn{
-    flex:1; min-height:46px; padding:0 16px; display:inline-flex; align-items:center; justify-content:center;
+    flex:1; min-height:50px; padding:0 16px; display:inline-flex; align-items:center; justify-content:center; gap:8px;
     font:inherit; font-size:.95rem; font-weight:600; text-decoration:none; cursor:pointer;
-    border:1px solid transparent; border-radius:12px;
+    border:1px solid transparent; border-radius:13px;
     transition:background-color .15s ease, border-color .15s ease, transform .1s ease;
   }
+  .dl-btn svg{width:18px; height:18px;}
   .dl-btn.ghost{background:var(--bg-raised); color:var(--text); border-color:var(--border);}
-  .dl-btn.primary{background:var(--accent); color:var(--accent-text);}
-  .dl-btn:active{transform:scale(.98);}
-  .dl-btn:focus-visible{outline:2px solid var(--accent-bright); outline-offset:2px;}
+  .dl-btn.primary{flex:1.6; background:var(--accent); color:var(--accent-text); box-shadow:0 8px 22px rgba(58,201,240,.22);}
+  .dl-btn:active, .dl-copy:active{transform:scale(.98);}
+  .dl-btn:focus-visible, .dl-x:focus-visible, .dl-copy:focus-visible{outline:2px solid var(--accent-bright); outline-offset:2px;}
   @media (hover:hover){
     .dl-btn.primary:hover{background:var(--accent-bright);}
-    .dl-btn.ghost:hover{border-color:var(--border-hover);}
+    .dl-btn.ghost:hover, .dl-copy:hover{border-color:var(--border-hover);}
+    .dl-x:hover{background:rgba(15,15,13,.88);}
+  }
+
+  /* Di HP: naik dari bawah layar seperti sheet */
+  @media (max-width:520px){
+    .dl-overlay{align-items:flex-end; padding:0;}
+    .dl-card{
+      width:100%; max-height:92dvh; border-width:1px 0 0; border-radius:24px 24px 0 0;
+      animation:dl-sheet .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .dl-card::before{
+      content:""; position:absolute; top:8px; left:50%; width:38px; height:4px; margin-left:-19px;
+      border-radius:999px; background:rgba(255,255,255,.28); z-index:3; pointer-events:none;
+    }
+    .dl-body{padding:6px 18px calc(20px + env(safe-area-inset-bottom,0px));}
+    .dl-card.no-media .dl-body{padding-top:28px;}
+    .dl-row dt{width:100px;}
   }
   @keyframes dl-fade{from{opacity:0;}}
-  @keyframes dl-pop{from{opacity:0; transform:translateY(10px) scale(.98);}}
+  @keyframes dl-pop{from{opacity:0; transform:translateY(12px) scale(.97);}}
+  @keyframes dl-sheet{from{transform:translateY(100%);}}
   @media (prefers-reduced-motion: reduce){
     .dl-overlay, .dl-card{animation:none;}
   }
@@ -579,26 +647,38 @@
 
   <!-- Window konfirmasi download -->
   <div class="dl-overlay" id="dl" hidden>
-    <div class="dl-card" role="dialog" aria-modal="true" aria-labelledby="dlTitle" aria-describedby="dlDesc">
-      <div class="dl-media" id="dlMedia" hidden><img id="dlImg" alt=""></div>
+    <div class="dl-card" id="dlCard" role="dialog" aria-modal="true" aria-labelledby="dlTitle" aria-describedby="dlDesc">
+      <button class="dl-x" id="dlX" type="button" aria-label="Tutup">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="dl-media" id="dlMedia" hidden>
+        <img id="dlImg" alt="">
+        <span class="dl-cat" id="dlCat" hidden></span>
+      </div>
       <div class="dl-body">
         <h2 class="dl-title" id="dlTitle"></h2>
         <p class="dl-desc" id="dlDesc"></p>
         <dl class="dl-info">
-          <div class="dl-row"><dt>Ukuran file</dt><dd id="dlSize"></dd></div>
-          <div class="dl-row"><dt>Link tujuan</dt><dd class="dl-link" id="dlLink"></dd></div>
+          <div class="dl-row">
+            <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>Ukuran file</dt>
+            <dd id="dlSize"></dd>
+          </div>
+          <div class="dl-row">
+            <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg>Link tujuan</dt>
+            <dd class="dl-linkcell"><span class="dl-link" id="dlLink"></span><button class="dl-copy" id="dlCopy" type="button" aria-label="Salin link"></button></dd>
+          </div>
         </dl>
+        <p class="dl-note">Tombol Download akan membuka link tujuan di tab baru.</p>
         <div class="dl-actions">
           <button class="dl-btn ghost" id="dlCancel" type="button">Batal</button>
-          <a class="dl-btn primary" id="dlGo" href="#" target="_blank" rel="noopener noreferrer">Download</a>
+          <a class="dl-btn primary" id="dlGo" href="#" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4 20h16"/></svg>
+            <span>Download</span>
+          </a>
         </div>
       </div>
     </div>
   </div>
-    </div>
-  </div>
-
-
 
 <script>
   /* ====== LATAR: JARINGAN PARTIKEL ======
@@ -812,9 +892,20 @@
      Klik "Download" di kartu membuka window ini: gambar, deskripsi, ukuran file, dan link tujuan.
      Link baru dibuka setelah menekan "Download".
      Sengaja dibuat sederhana: buka/tutup langsung (tanpa timer atau menunggu animasi),
-     jadi tidak mungkin nyangkut dalam keadaan setengah terbuka. */
-  const dlBox = $("dl"), dlGo = $("dlGo"), dlCancel = $("dlCancel");
-  let dlOpener = null;
+     jadi tidak mungkin nyangkut dalam keadaan setengah terbuka. Satu-satunya timer hanya
+     untuk mengembalikan ikon "tersalin", dan tidak memengaruhi buka/tutup. */
+  const dlBox = $("dl"), dlCard = $("dlCard"), dlGo = $("dlGo"), dlCancel = $("dlCancel");
+  const dlX = $("dlX"), dlCopy = $("dlCopy");
+  const DL_ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>';
+  const DL_ICON_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>';
+  let dlOpener = null, dlCopyTimer = null;
+
+  function resetCopy(){
+    clearTimeout(dlCopyTimer);
+    dlCopy.classList.remove("is-done");
+    dlCopy.innerHTML = DL_ICON_COPY;
+    dlCopy.setAttribute("aria-label", "Salin link");
+  }
 
   function openDl(d, link, opener){
     $("dlTitle").textContent = d.name || "Tanpa nama";
@@ -822,12 +913,21 @@
     descEl.textContent = d.desc || ""; descEl.hidden = !d.desc;
     $("dlSize").textContent = d.size ? String(d.size) : "Tidak diketahui";
     $("dlLink").textContent = link; $("dlLink").title = link;
+    dlGo.href = link;
+
     // Gambar: disembunyikan kalau tidak ada atau gagal dimuat
     const media = $("dlMedia"), img = $("dlImg"), src = d.image ? safeImg(d.image) : "";
-    img.onerror = () => { media.hidden = true; };
-    if(src){ media.hidden = false; img.src = src; }
-    else { media.hidden = true; img.removeAttribute("src"); }
-    dlGo.href = link;
+    img.onerror = () => { media.hidden = true; dlCard.classList.add("no-media"); };
+    if(src){ media.hidden = false; dlCard.classList.remove("no-media"); img.src = src; }
+    else { media.hidden = true; img.removeAttribute("src"); dlCard.classList.add("no-media"); }
+
+    // Label kategori di atas gambar
+    const cat = CATEGORIES.find(c => c.key !== "all" && c.key === catOf(d));
+    const catEl = $("dlCat");
+    catEl.hidden = !cat; catEl.textContent = cat ? cat.label : "";
+
+    resetCopy();
+    dlCard.scrollTop = 0;
     dlOpener = opener || null;
     dlBox.hidden = false;
     dlGo.focus({ preventScroll:true });
@@ -836,12 +936,14 @@
   function closeDl(){
     if(dlBox.hidden) return;
     dlBox.hidden = true;
+    resetCopy();
     // kembalikan fokus ke tombol yang tadi diklik (kalau masih ada di halaman)
     if(dlOpener && dlOpener.isConnected) dlOpener.focus({ preventScroll:true });
     dlOpener = null;
   }
 
   dlBox.addEventListener("click", e => { if(e.target === dlBox) closeDl(); });   // klik area gelap
+  dlX.addEventListener("click", closeDl);
   dlCancel.addEventListener("click", closeDl);
   dlGo.addEventListener("click", closeDl);                                       // link tetap terbuka di tab baru
   window.addEventListener("pageshow", closeDl);                                  // jaga-jaga saat kembali lewat tombol back
@@ -849,11 +951,29 @@
     if(dlBox.hidden) return;
     if(e.key === "Escape"){ e.preventDefault(); closeDl(); }
     else if(e.key === "Tab"){                                                    // fokus tetap di dalam window
-      const first = dlCancel, last = dlGo;
+      const first = dlX, last = dlGo;
       if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
       else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
     }
   });
+
+  dlCopy.addEventListener("click", async () => {
+    const text = $("dlLink").textContent;
+    try{ await navigator.clipboard.writeText(text); }
+    catch(e){
+      const ta = document.createElement("textarea");
+      ta.value = text; ta.style.cssText = "position:fixed;opacity:0;pointer-events:none";
+      dlBox.appendChild(ta); ta.select();
+      try{ document.execCommand("copy"); }catch(_){}
+      ta.remove();
+    }
+    dlCopy.classList.add("is-done");
+    dlCopy.innerHTML = DL_ICON_OK;
+    dlCopy.setAttribute("aria-label", "Tersalin");
+    clearTimeout(dlCopyTimer);
+    dlCopyTimer = setTimeout(resetCopy, 1600);
+  });
+  resetCopy();
 
   function makeCard(d){
     const link = safeUrl(d.link);
@@ -1189,7 +1309,7 @@
       sb.classList.toggle("no-scroll", maxScroll <= 1);
       if(maxScroll <= 1) return;
       const trackH = sb.clientHeight;
-      const thumbH = Math.min(trackH, Math.max(40, Math.round(trackH * vh / docH)));
+      const thumbH = Math.min(trackH, Math.max(32, Math.round(trackH * vh / docH)));
       maxY = Math.max(0, trackH - thumbH);
       thumb.style.height = thumbH + "px";
     }
