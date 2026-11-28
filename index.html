@@ -680,6 +680,14 @@
     const isCoarse = window.matchMedia('(pointer:coarse)').matches;
     const canvas = document.getElementById('matrixCanvas');
     const ctx = canvas.getContext('2d');
+    const ACCENT_RGB = (function(){
+      const v = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+      const el = document.createElement('div'); el.style.color = v || '#3AC9F0';
+      document.body.appendChild(el);
+      const m = getComputedStyle(el).color.match(/\d+/g);
+      document.body.removeChild(el);
+      return m ? m.slice(0,3).join(',') : '58,201,240';
+    })();
     const LINK = isCoarse ? 105 : 140;       // jarak maksimum dua titik terhubung
     const MOUSE_R = 170;                      // jangkauan kursor
     const MAX = isCoarse ? 55 : 110;
@@ -726,20 +734,20 @@
           if(dx > LINK || dx < -LINK || dy > LINK || dy < -LINK) continue;
           const d = Math.hypot(dx, dy);
           if(d >= LINK) continue;
-          ctx.strokeStyle = 'rgba(58,201,240,' + ((1 - d / LINK) * 0.2).toFixed(3) + ')';
+          ctx.strokeStyle = 'rgba(' + ACCENT_RGB + ',' + ((1 - d / LINK) * 0.2).toFixed(3) + ')';
           ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
         }
         if(mouse.on){
           const dx = a.x - mouse.x, dy = a.y - mouse.y, d = Math.hypot(dx, dy);
           if(d < MOUSE_R){
-            ctx.strokeStyle = 'rgba(58,201,240,' + ((1 - d / MOUSE_R) * 0.45).toFixed(3) + ')';
+            ctx.strokeStyle = 'rgba(' + ACCENT_RGB + ',' + ((1 - d / MOUSE_R) * 0.45).toFixed(3) + ')';
             ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(mouse.x, mouse.y); ctx.stroke();
           }
         }
       }
       for(const p of pts){
         const glow = 0.45 + 0.25 * Math.sin(time / 900 + p.ph);   // kedip lembut
-        ctx.fillStyle = 'rgba(58,201,240,' + glow.toFixed(2) + ')';
+        ctx.fillStyle = 'rgba(' + ACCENT_RGB + ',' + glow.toFixed(2) + ')';
         ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.2832); ctx.fill();
       }
     }
